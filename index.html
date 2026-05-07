@@ -1,0 +1,1360 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Higienização das Mãos</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700&family=Syne+Mono&display=swap');
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+*{scrollbar-width:none;-ms-overflow-style:none;}
+*::-webkit-scrollbar{display:none;}
+
+:root{
+  /* fundo médio, cards+botões 2 tons mais escuros */
+  --bg0:#b8c9d8;
+  --ink:rgba(12,22,36,0.95);
+  --ink-dim:rgba(12,22,36,0.55);
+  --acc:rgba(40,76,116,0.90);
+  --acc-dim:rgba(40,76,116,0.12);
+  --ok:#2e6a2e;--err:#922828;--warn:#7a5408;--neutral:#3d6e8a;
+  --card-bg:rgba(155,178,198,0.90);
+  --border:rgba(55,95,135,0.45);
+  --border-h:rgba(55,95,135,0.75);
+  --font:'Syne',sans-serif;
+  --mono:'Syne Mono',monospace;
+  --sat:env(safe-area-inset-top,0px);
+  --sab:env(safe-area-inset-bottom,0px);
+  --sal:env(safe-area-inset-left,0px);
+  --sar:env(safe-area-inset-right,0px);
+}
+
+html{height:100%;overflow:hidden;}
+body{
+  font-family:var(--font);
+  background:#b8c9d8;
+  color:var(--ink);
+  overflow:hidden;
+  height:100%;
+  height:-webkit-fill-available;
+  letter-spacing:0.015em;
+  padding-top:var(--sat);
+  padding-left:var(--sal);
+  padding-right:var(--sar);
+  /* Safari: preserve-3d quebra dentro de overflow:hidden em ancestrais */
+  -webkit-transform:translateZ(0);
+}
+
+/* ── FLOOD BACKGROUND (dilúvio) ── */
+#rw{width:100vw;height:100vh;position:fixed;top:0;left:0;z-index:0;overflow:hidden;background:#b8c9d8;}
+#rc{display:block;position:absolute;top:0;left:0;}
+#river-overlay{position:fixed;inset:0;z-index:1;pointer-events:none;background:rgba(183,199,216,0.30);}
+#grain-fine{
+  position:fixed;inset:0;z-index:2;pointer-events:none;
+  opacity:0.028;mix-blend-mode:overlay;
+  background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size:200px 200px;
+  animation:grainA 6s steps(1) infinite;
+}
+@keyframes grainA{
+  0%{background-position:0 0}12%{background-position:-31px 19px}25%{background-position:67px -24px}
+  37%{background-position:-12px 43px}50%{background-position:54px 7px}62%{background-position:-61px -18px}
+  75%{background-position:28px 57px}87%{background-position:-47px 33px}100%{background-position:0 0}
+}
+
+/* Season toast */
+#seasonToast{
+  position:fixed;bottom:18px;left:50%;transform:translateX(-50%) translateY(8px);
+  font-family:'Syne Mono',monospace;font-size:11px;letter-spacing:0.18em;
+  color:var(--acc);border:1px solid rgba(188,168,110,0.18);background:rgba(10,10,10,0.82);
+  padding:5px 14px;border-radius:20px;pointer-events:none;
+  opacity:0;transition:opacity .4s,transform .4s;z-index:100;
+}
+#seasonToast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+
+/* ── MENU ── */
+#menuBtn{position:fixed;top:calc(12px + var(--sat));right:14px;z-index:200;cursor:pointer;display:flex;flex-direction:column;gap:5px;padding:10px;-webkit-tap-highlight-color:transparent;min-width:44px;min-height:44px;justify-content:center;align-items:flex-end;}
+#menuBtn span{display:block;width:18px;height:1px;background:rgba(180,205,225,0.55);transition:background .2s,width .2s}
+#menuBtn:hover span{background:var(--acc)}
+#menuBtn:hover span:nth-child(2){width:11px}
+#menu{display:none;position:fixed;top:calc(52px + var(--sat));right:14px;z-index:200;background:rgba(200,218,232,0.97);border:1px solid rgba(70,110,150,0.22);border-radius:10px;backdrop-filter:blur(28px);min-width:200px;max-width:calc(100vw - 28px);overflow-y:auto;box-shadow:0 6px 24px rgba(60,100,140,0.18);}
+.menu-item{padding:11px 14px;font-family:var(--font);font-size:12px;font-weight:600;letter-spacing:0.09em;text-transform:uppercase;color:rgba(28,42,56,0.70);cursor:pointer;display:flex;align-items:center;gap:10px;transition:color .2s,background .2s;border-bottom:1px solid rgba(80,120,160,0.10);-webkit-tap-highlight-color:transparent;min-height:44px;}
+.menu-item:last-child{border-bottom:none}
+.menu-item:hover{background:rgba(180,202,220,0.80);color:rgba(14,26,40,1)}
+.menu-item .mi-dot{width:4px;height:4px;border-radius:50%;border:1px solid currentColor;flex-shrink:0}
+.menu-sep{height:1px;background:rgba(80,120,160,0.12);margin:4px 0;}
+
+/* ── HUDs ── */
+#categoriaAtual{position:fixed;top:calc(14px + var(--sat));left:14px;font-size:10px;letter-spacing:0.14em;color:rgba(28,42,56,0.45);text-transform:uppercase;z-index:10;pointer-events:none;font-family:var(--mono);}
+#modoAtualBadge{position:fixed;bottom:calc(10px + var(--sab));left:14px;font-size:9px;color:rgba(28,42,56,0.40);letter-spacing:0.1em;font-family:var(--mono);}
+
+/* ── APP ── */
+#app{
+  position:relative;z-index:10;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  height:100%;height:-webkit-fill-available;
+  padding:60px 12px 44px;
+  padding-bottom:calc(44px + var(--sab));
+}
+
+/* ── FLASHCARD ── */
+.fc-wrap{
+  width:100%;max-width:560px;
+  display:flex;flex-direction:column;
+  gap:12px;
+}
+
+/* progress */
+#progressBar{width:100%;height:1px;background:rgba(80,120,160,0.20);border-radius:1px;overflow:hidden;margin-bottom:4px;}
+#progressFill{height:100%;border-radius:1px;background:linear-gradient(90deg,rgba(60,100,140,0.5),rgba(60,100,140,1));transition:width .6s cubic-bezier(.4,0,.2,1);width:0%;}
+
+/* placar */
+#placar{display:flex;gap:12px;font-size:10px;color:rgba(28,42,56,0.55);letter-spacing:0.07em;}
+#placar .ok{color:var(--ok)}
+#placar .err{color:var(--err)}
+#placar b{font-weight:600;color:rgba(28,42,56,0.90)}
+
+/* card flip — Safari-safe: opacity transition em vez de preserve-3d puro */
+.flip-scene{width:100%;position:relative;}
+.flip-inner{
+  position:relative;width:100%;
+}
+/* front: visível por padrão */
+.flip-face.front{
+  position:relative;
+  min-height:180px;
+  border:1.5px solid rgba(180,205,228,0.70);border-radius:14px;
+  background:rgba(148,172,194,0.92);
+  backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  padding:22px 18px;text-align:center;
+  box-shadow:0 6px 28px rgba(30,60,100,0.22),0 1.5px 0 rgba(255,255,255,0.18),inset 0 1.5px 0 rgba(255,255,255,0.42),inset 0 -1px 0 rgba(20,40,70,0.18);
+  transition:opacity .3s,transform .3s;
+  opacity:1;pointer-events:auto;
+  transform:none;
+  width:100%;
+}
+/* back: sobreposta, inicialmente invisível */
+.flip-face.back{
+  position:absolute;top:0;left:0;right:0;
+  min-height:180px;
+  border:1.5px solid rgba(180,205,228,0.70);border-radius:14px;
+  background:rgba(140,166,190,0.94);
+  backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  padding:22px 18px;text-align:center;
+  box-shadow:0 6px 28px rgba(30,60,100,0.22),0 1.5px 0 rgba(255,255,255,0.18),inset 0 1.5px 0 rgba(255,255,255,0.42),inset 0 -1px 0 rgba(20,40,70,0.18);
+  transition:opacity .3s,transform .3s;
+  opacity:0;pointer-events:none;
+  transform:translateY(6px);
+}
+/* flipped state */
+.flip-inner.is-flipped .flip-face.front{
+  opacity:0;pointer-events:none;transform:translateY(-6px);
+}
+.flip-inner.is-flipped .flip-face.back{
+  opacity:1;pointer-events:auto;transform:translateY(0);
+}
+.flip-face .fc-label{
+  position:absolute;top:10px;left:12px;
+  font-size:9px;letter-spacing:0.18em;text-transform:uppercase;color:rgba(30,55,85,0.70);
+}
+.flip-face .fc-situation{
+  font-size:11px;letter-spacing:0.06em;color:rgba(12,22,36,0.80);
+  margin-bottom:12px;line-height:1.6;text-transform:uppercase;font-weight:600;
+}
+.flip-face .fc-question{
+  font-family:var(--mono);font-size:16px;line-height:1.4;color:rgba(8,18,32,1);letter-spacing:0.03em;
+  text-shadow:0 1px 2px rgba(0,0,0,0.10);font-weight:700;
+}
+
+/* glow states — aplicados na face front */
+.flip-face.front.glow-ok{
+  border-color:var(--ok)!important;
+  box-shadow:0 0 0 2px rgba(122,184,122,0.5),0 0 40px rgba(122,184,122,0.18),inset 0 0 30px rgba(122,184,122,0.07)!important;
+}
+.flip-face.front.glow-neutral{
+  border-color:var(--neutral)!important;
+  box-shadow:0 0 0 2px rgba(122,184,200,0.5),0 0 40px rgba(122,184,200,0.18),inset 0 0 30px rgba(122,184,200,0.07)!important;
+}
+.flip-face.front.glow-err{
+  border-color:var(--err)!important;
+  box-shadow:0 0 0 2px rgba(200,96,96,0.5),0 0 40px rgba(200,96,96,0.18),inset 0 0 30px rgba(200,96,96,0.07)!important;
+}
+.flip-face.front.glow-critical{
+  border-color:#ff4444!important;
+  box-shadow:0 0 0 3px rgba(255,68,68,0.65),0 0 60px rgba(255,68,68,0.28),inset 0 0 40px rgba(255,68,68,0.12)!important;
+  animation:criticalPulse 0.3s ease-in-out 3;
+}
+@keyframes criticalPulse{0%,100%{transform:none}50%{transform:scale(1.01)}}
+
+/* back face content */
+.back-verdict{
+  font-family:var(--mono);font-size:13px;font-weight:600;letter-spacing:0.08em;margin-bottom:10px;
+}
+.back-verdict.ok{color:var(--ok)}
+.back-verdict.neutral{color:var(--neutral)}
+.back-verdict.wrong{color:var(--err)}
+.back-verdict.critical{color:#ff4444}
+.back-explanation{
+  font-size:12px;line-height:1.65;color:rgba(8,18,32,0.88);letter-spacing:0.02em;font-weight:600;
+  border-top:1px solid rgba(55,95,135,0.28);padding-top:10px;margin-top:4px;
+}
+.back-rule{
+  margin-top:10px;font-size:10px;letter-spacing:0.1em;text-transform:uppercase;color:var(--acc);opacity:.9;
+}
+.back-next-hint{
+  margin-top:14px;font-size:9px;letter-spacing:0.14em;text-transform:uppercase;
+  color:rgba(28,42,56,0.40);opacity:.6;animation:pulseHint 2.4s ease-in-out infinite;
+}
+@keyframes pulseHint{0%,100%{opacity:.2}50%{opacity:.7}}
+
+/* CHOICE BUTTONS */
+.choice-row{display:flex;gap:10px;width:100%;}
+.choice-btn{
+  flex:1;min-height:58px;padding:12px 8px;
+  background:rgba(148,172,194,0.90);
+  border:1.5px solid rgba(185,210,232,0.65);border-radius:10px;
+  color:rgba(8,18,32,0.95);font-family:var(--font);font-size:12px;font-weight:700;
+  letter-spacing:0.08em;text-transform:uppercase;cursor:pointer;
+  transition:border-color .2s,color .2s,background .2s,transform .1s,box-shadow .2s;
+  -webkit-tap-highlight-color:transparent;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;
+  box-shadow:0 4px 16px rgba(30,60,100,0.18),inset 0 1.5px 0 rgba(255,255,255,0.40),inset 0 -1px 0 rgba(20,40,70,0.20);
+}
+.choice-btn:hover:not(:disabled){
+  border-color:rgba(200,225,248,0.85);color:rgba(4,12,26,1);
+  background:rgba(132,158,182,0.96);
+  box-shadow:0 6px 20px rgba(30,60,100,0.26),inset 0 1.5px 0 rgba(255,255,255,0.45),inset 0 -1px 0 rgba(20,40,70,0.22);
+}
+.choice-btn:active{transform:scale(0.96)}
+.choice-btn:disabled{pointer-events:none;opacity:0.35;}
+.choice-btn .cb-icon{font-size:18px;margin-bottom:2px;}
+.choice-btn .cb-label{font-size:11px;}
+.choice-btn.alcohol{border-color:rgba(190,160,80,0.55);color:rgba(70,48,8,1);}
+.choice-btn.soap{border-color:rgba(80,120,180,0.55);color:rgba(18,44,88,1);}
+.choice-btn.alcohol:hover:not(:disabled){border-color:rgba(200,170,90,0.80);color:rgba(60,38,4,1);box-shadow:0 4px 16px rgba(160,130,60,0.22),inset 0 1.5px 0 rgba(255,255,255,0.40),inset 0 -1px 0 rgba(100,70,10,0.20);}
+.choice-btn.soap:hover:not(:disabled){border-color:rgba(90,130,190,0.80);color:rgba(12,36,80,1);box-shadow:0 4px 16px rgba(60,100,160,0.22),inset 0 1.5px 0 rgba(255,255,255,0.40),inset 0 -1px 0 rgba(20,50,100,0.20);}
+
+/* next btn */
+#nextBtn{
+  width:100%;padding:13px;
+  background:rgba(148,172,194,0.88);border:1.5px solid rgba(185,210,232,0.65);border-radius:8px;
+  color:rgba(8,18,32,0.92);font-family:var(--font);font-size:11px;font-weight:700;
+  letter-spacing:0.14em;text-transform:uppercase;cursor:pointer;
+  transition:border-color .2s,color .2s,background .2s,box-shadow .2s;
+  -webkit-tap-highlight-color:transparent;
+  display:none;
+  box-shadow:0 4px 16px rgba(30,60,100,0.18),inset 0 1.5px 0 rgba(255,255,255,0.40),inset 0 -1px 0 rgba(20,40,70,0.20);
+}
+#nextBtn:hover{border-color:rgba(200,225,248,0.85);color:rgba(4,12,26,1);background:rgba(132,158,182,0.96);box-shadow:0 6px 20px rgba(30,60,100,0.26),inset 0 1.5px 0 rgba(255,255,255,0.45),inset 0 -1px 0 rgba(20,40,70,0.22);}
+
+/* hint */
+.fc-hint{
+  text-align:center;font-size:9px;letter-spacing:0.14em;text-transform:uppercase;
+  color:rgba(28,42,56,0.45);margin-top:2px;
+}
+
+/* RESULT SCREEN */
+#resultScreen{
+  display:none;
+  position:fixed;inset:0;z-index:300;
+  background:rgba(145,165,182,0.92);backdrop-filter:blur(20px);
+  align-items:center;justify-content:center;padding:20px;
+}
+.result-card{
+  width:100%;max-width:400px;
+  padding:36px 24px 28px;
+  background:rgba(148,172,194,0.97);
+  border:1.5px solid rgba(185,210,232,0.65);border-radius:16px;
+  text-align:center;
+  box-shadow:0 8px 40px rgba(30,60,100,0.26),inset 0 1.5px 0 rgba(255,255,255,0.42),inset 0 -1px 0 rgba(20,40,70,0.18);
+}
+.result-title{font-family:var(--mono);font-size:28px;letter-spacing:0.1em;color:rgba(6,14,28,1);margin-bottom:6px;}
+.result-sub{font-size:11px;letter-spacing:0.1em;text-transform:uppercase;color:rgba(12,22,36,0.72);margin-bottom:24px;font-weight:600;}
+.result-stats{display:flex;gap:16px;justify-content:center;margin-bottom:24px;}
+.result-stat{text-align:center;}
+.result-stat .rs-n{font-family:var(--mono);font-size:32px;font-weight:700;line-height:1;}
+.result-stat .rs-l{font-size:9px;letter-spacing:0.14em;text-transform:uppercase;color:var(--ink-dim);margin-top:4px;}
+.result-stat.ok .rs-n{color:var(--ok)}
+.result-stat.neutral .rs-n{color:var(--neutral)}
+.result-stat.err .rs-n{color:var(--err)}
+.result-restart{
+  width:100%;padding:14px;
+  background:transparent;border:1px solid var(--acc);border-radius:8px;
+  color:var(--acc);font-family:var(--font);font-size:12px;font-weight:600;
+  letter-spacing:0.14em;text-transform:uppercase;cursor:pointer;
+  transition:background .2s;margin-bottom:10px;
+}
+.result-restart:hover{background:var(--acc-dim);}
+.result-restart-errors{
+  width:100%;padding:14px;
+  background:transparent;border:1px solid rgba(200,96,96,0.4);border-radius:8px;
+  color:var(--err);font-family:var(--font);font-size:12px;font-weight:600;
+  letter-spacing:0.14em;text-transform:uppercase;cursor:pointer;
+  transition:background .2s;
+}
+.result-restart-errors:hover{background:rgba(200,96,96,0.08);}
+
+/* errors only mode badge */
+#errorsModeBadge{
+  display:none;
+  padding:4px 10px;border:1px solid rgba(200,96,96,0.55);border-radius:4px;
+  font-size:9px;letter-spacing:0.12em;text-transform:uppercase;color:var(--err);
+  text-align:center;
+}
+
+@media(max-width:480px){
+  #app{padding:52px 8px 36px;padding-bottom:calc(36px + var(--sab));}
+  .flip-face .fc-question{font-size:14px;}
+  .choice-btn{min-height:52px;}
+}
+@media(max-height:600px){
+  .flip-inner{min-height:140px;}
+  .flip-face .fc-situation{font-size:10px;margin-bottom:8px;}
+  .flip-face .fc-question{font-size:13px;}
+}
+
+/* ── MODE SWITCHER (3 dots top-left) ── */
+#modeSwitcherBtn{
+  position:fixed;top:calc(12px + var(--sat));left:14px;z-index:200;cursor:pointer;
+  display:flex;flex-direction:column;gap:4px;padding:10px;
+  -webkit-tap-highlight-color:transparent;min-width:44px;min-height:44px;
+  justify-content:center;align-items:flex-start;
+}
+#modeSwitcherBtn span{
+  display:block;width:4px;height:4px;border-radius:50%;
+  background:rgba(28,42,56,0.45);transition:background .2s,transform .2s;
+}
+#modeSwitcherBtn:hover span{background:var(--acc);transform:scale(1.3);}
+
+/* Mode switcher dropdown */
+#modeMenu{
+  display:none;position:fixed;top:calc(52px + var(--sat));left:14px;z-index:200;
+  background:rgba(200,218,232,0.97);border:1px solid rgba(70,110,150,0.22);
+  border-radius:10px;backdrop-filter:blur(28px);min-width:200px;
+  max-width:calc(100vw - 28px);overflow-y:auto;
+  box-shadow:0 6px 24px rgba(60,100,140,0.18);
+}
+#modeMenu .menu-item{padding:11px 14px;font-family:var(--font);font-size:12px;font-weight:600;
+  letter-spacing:0.09em;text-transform:uppercase;color:rgba(28,42,56,0.70);cursor:pointer;
+  display:flex;align-items:center;gap:10px;transition:color .2s,background .2s;
+  border-bottom:1px solid rgba(80,120,160,0.10);-webkit-tap-highlight-color:transparent;min-height:44px;}
+#modeMenu .menu-item:last-child{border-bottom:none}
+#modeMenu .menu-item:hover{background:rgba(180,202,220,0.80);color:rgba(14,26,40,1)}
+#modeMenu .menu-item.active{color:var(--acc);border-left:2px solid var(--acc);padding-left:12px;}
+#modeMenu .mi-dot{width:4px;height:4px;border-radius:50%;border:1px solid currentColor;flex-shrink:0}
+
+/* ── HANDWASH MODE ── */
+#handwashApp{
+  position:relative;z-index:10;
+  display:none;flex-direction:column;align-items:center;justify-content:center;
+  height:100%;height:-webkit-fill-available;
+  padding:60px 12px 44px;
+  padding-bottom:calc(44px + var(--sab));
+}
+.hw-wrap{
+  width:100%;max-width:560px;
+  display:flex;flex-direction:column;
+  align-items:center;gap:14px;
+}
+
+/* GIF frame/moldura */
+.hw-frame{
+  width:100%;
+  border:1.5px solid rgba(180,205,228,0.70);border-radius:14px;
+  background:rgba(148,172,194,0.92);
+  backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);
+  box-shadow:0 6px 28px rgba(30,60,100,0.22),0 1.5px 0 rgba(255,255,255,0.18),
+             inset 0 1.5px 0 rgba(255,255,255,0.42),inset 0 -1px 0 rgba(20,40,70,0.18);
+  overflow:hidden;
+  position:relative;
+  aspect-ratio:4/3;
+  display:flex;align-items:center;justify-content:center;
+}
+.hw-frame img{
+  width:100%;height:100%;object-fit:cover;
+  display:block;
+}
+/* step label overlay */
+.hw-step-label{
+  position:absolute;bottom:8px;right:10px;
+  font-family:var(--mono);font-size:9px;letter-spacing:0.14em;
+  color:rgba(28,42,56,0.55);background:rgba(180,200,220,0.70);
+  border-radius:4px;padding:2px 6px;pointer-events:none;
+}
+
+/* 7 step buttons row */
+.hw-steps-row{
+  display:flex;gap:7px;width:100%;
+  justify-content:center;
+}
+.hw-step-btn{
+  flex:1;min-height:52px;max-width:64px;padding:8px 4px;
+  background:rgba(148,172,194,0.90);
+  border:1.5px solid rgba(185,210,232,0.65);border-radius:10px;
+  color:rgba(8,18,32,0.95);font-family:var(--font);font-size:10px;font-weight:700;
+  letter-spacing:0.06em;text-transform:uppercase;cursor:pointer;
+  transition:border-color .2s,color .2s,background .2s,transform .1s,box-shadow .2s;
+  -webkit-tap-highlight-color:transparent;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;
+  box-shadow:0 4px 16px rgba(30,60,100,0.18),inset 0 1.5px 0 rgba(255,255,255,0.40),
+             inset 0 -1px 0 rgba(20,40,70,0.20);
+  position:relative;
+}
+.hw-step-btn:hover:not(:disabled){
+  border-color:rgba(200,225,248,0.85);
+  background:rgba(132,158,182,0.96);
+  box-shadow:0 6px 20px rgba(30,60,100,0.26),inset 0 1.5px 0 rgba(255,255,255,0.45),
+             inset 0 -1px 0 rgba(20,40,70,0.22);
+}
+.hw-step-btn:active{transform:scale(0.95)}
+.hw-step-btn.done{
+  border-color:rgba(46,106,46,0.65);
+  background:rgba(46,106,46,0.18);
+  color:var(--ok);
+}
+.hw-step-btn.active{
+  border-color:rgba(55,95,135,0.85);
+  background:rgba(55,95,135,0.22);
+  color:var(--acc);
+  box-shadow:0 0 0 2px rgba(55,95,135,0.3),0 4px 16px rgba(30,60,100,0.20),
+             inset 0 1.5px 0 rgba(255,255,255,0.40),inset 0 -1px 0 rgba(20,40,70,0.20);
+}
+.hw-step-btn .step-num{font-size:14px;font-weight:700;line-height:1;}
+.hw-step-btn .step-check{font-size:12px;position:absolute;top:4px;right:5px;opacity:0;transition:opacity .2s;}
+.hw-step-btn.done .step-check{opacity:1;}
+
+/* hw hint */
+.hw-hint{
+  font-family:var(--mono);font-size:9px;letter-spacing:0.14em;text-transform:uppercase;
+  color:rgba(28,42,56,0.45);text-align:center;
+  animation:pulseHint 2.4s ease-in-out infinite;
+}
+
+/* FINALIZADO SCREEN */
+#hwDoneScreen{
+  display:none;
+  position:fixed;inset:0;z-index:300;
+  background:rgba(145,165,182,0.92);backdrop-filter:blur(20px);
+  align-items:center;justify-content:center;padding:20px;
+}
+.hw-done-card{
+  width:100%;max-width:400px;
+  padding:40px 24px 32px;
+  background:rgba(148,172,194,0.97);
+  border:1.5px solid rgba(185,210,232,0.65);border-radius:16px;
+  text-align:center;
+  box-shadow:0 8px 40px rgba(30,60,100,0.26),inset 0 1.5px 0 rgba(255,255,255,0.42),
+             inset 0 -1px 0 rgba(20,40,70,0.18);
+}
+.hw-done-icon{font-size:48px;margin-bottom:12px;display:block;}
+.hw-done-title{font-family:var(--mono);font-size:22px;letter-spacing:0.10em;
+  color:rgba(6,14,28,1);margin-bottom:6px;}
+.hw-done-sub{font-size:11px;letter-spacing:0.10em;text-transform:uppercase;
+  color:rgba(12,22,36,0.60);margin-bottom:8px;font-weight:600;}
+.hw-done-pct-area{
+  margin:20px 0 24px;
+  font-family:var(--mono);font-size:48px;font-weight:700;
+  color:var(--ok);letter-spacing:0.04em;
+  opacity:0.35;
+}
+.hw-done-pct-label{font-size:10px;letter-spacing:0.14em;text-transform:uppercase;
+  color:rgba(28,42,56,0.40);margin-top:-8px;margin-bottom:20px;}
+.hw-done-restart{
+  width:100%;padding:14px;
+  background:transparent;border:1px solid var(--acc);border-radius:8px;
+  color:var(--acc);font-family:var(--font);font-size:12px;font-weight:600;
+  letter-spacing:0.14em;text-transform:uppercase;cursor:pointer;
+  transition:background .2s;
+}
+.hw-done-restart:hover{background:var(--acc-dim);}
+</style>
+</head>
+<body>
+
+<!-- RIVER BACKGROUND (Myath) -->
+<div id="rw"><canvas id="rc"></canvas></div>
+<div id="river-overlay"></div>
+<div id="grain-fine"></div>
+<div id="seasonToast"></div>
+
+<!-- MODE SWITCHER -->
+<div id="modeSwitcherBtn" onclick="toggleModeMenu()">
+  <span></span><span></span><span></span>
+</div>
+<div id="modeMenu">
+  <div class="menu-item active" id="modeItemFlash" onclick="setMode('flashcard')"><span class="mi-dot"></span> flashcard</div>
+  <div class="menu-item" id="modeItemHw" onclick="setMode('handwash')"><span class="mi-dot"></span> lavagem das mãos <span style="font-size:8px;opacity:0.5;margin-left:4px;">beta</span></div>
+</div>
+
+<!-- HUDs -->
+<div id="categoriaAtual">higienização</div>
+<div id="modoAtualBadge">modo::flashcard</div>
+
+<!-- MENU -->
+<div id="menuBtn" onclick="toggleMenu()"><span></span><span></span><span></span></div>
+<div id="menu">
+  <div class="menu-item" onclick="startNormal()"><span class="mi-dot"></span> todos os cenários</div>
+  <div class="menu-item" onclick="startErrors()"><span class="mi-dot"></span> revisar erros</div>
+  <div class="menu-sep"></div>
+  <div class="menu-item" onclick="fecharMenu()"><span class="mi-dot"></span> fechar</div>
+</div>
+
+<!-- MAIN APP -->
+<div id="app">
+  <div class="fc-wrap">
+    <div id="progressBar"><div id="progressFill"></div></div>
+
+    <div id="placar">
+      <span>card <b id="pIdx">1/12</b></span>
+      <span class="ok">✓ <b id="pOk">0</b></span>
+      <span class="err">✗ <b id="pErr">0</b></span>
+    </div>
+
+    <div id="errorsModeBadge">modo: revisar erros</div>
+
+    <!-- FLIP CARD -->
+    <div class="flip-scene">
+      <div class="flip-inner" id="flipInner">
+        <!-- FRONT -->
+        <div class="flip-face front" id="flipFront">
+          <span class="fc-label">cenário</span>
+          <div class="fc-situation" id="fcSituation"></div>
+          <div class="fc-question" id="fcQuestion"></div>
+        </div>
+        <!-- BACK -->
+        <div class="flip-face back" id="flipBack">
+          <div class="back-verdict" id="backVerdict"></div>
+          <div class="back-explanation" id="backExplanation"></div>
+          <div class="back-rule" id="backRule"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- HINT -->
+    <div class="fc-hint" id="fcHint">escolha o método correto de higienização</div>
+
+    <!-- CHOICES -->
+    <div class="choice-row">
+      <button class="choice-btn alcohol" id="btnAlcohol" onclick="escolher('alcohol')">
+        <span class="cb-icon">🧴</span>
+        <span class="cb-label">Álcool 70%</span>
+      </button>
+      <button class="choice-btn soap" id="btnSoap" onclick="escolher('soap')">
+        <span class="cb-icon">🚿</span>
+        <span class="cb-label">Água e Sabão</span>
+      </button>
+    </div>
+
+    <!-- NEXT -->
+    <button id="nextBtn" onclick="proximoCard()">próximo →</button>
+  </div>
+</div>
+
+<!-- HANDWASH APP -->
+<div id="handwashApp">
+  <div class="hw-wrap">
+    <div class="hw-frame" id="hwFrame">
+      <img id="hwGif" src="100050.webp" alt="Lavagem das mãos" />
+      <div class="hw-step-label" id="hwStepLabel">0 / 7</div>
+    </div>
+
+    <div class="hw-steps-row">
+      <button class="hw-step-btn" id="hwBtn0" onclick="hwStep(0)">
+        <span class="step-num">1</span>
+        <span class="step-check">✓</span>
+      </button>
+      <button class="hw-step-btn" id="hwBtn1" onclick="hwStep(1)">
+        <span class="step-num">2</span>
+        <span class="step-check">✓</span>
+      </button>
+      <button class="hw-step-btn" id="hwBtn2" onclick="hwStep(2)">
+        <span class="step-num">3</span>
+        <span class="step-check">✓</span>
+      </button>
+      <button class="hw-step-btn" id="hwBtn3" onclick="hwStep(3)">
+        <span class="step-num">4</span>
+        <span class="step-check">✓</span>
+      </button>
+      <button class="hw-step-btn" id="hwBtn4" onclick="hwStep(4)">
+        <span class="step-num">5</span>
+        <span class="step-check">✓</span>
+      </button>
+      <button class="hw-step-btn" id="hwBtn5" onclick="hwStep(5)">
+        <span class="step-num">6</span>
+        <span class="step-check">✓</span>
+      </button>
+      <button class="hw-step-btn" id="hwBtn6" onclick="hwStep(6)">
+        <span class="step-num">7</span>
+        <span class="step-check">✓</span>
+      </button>
+    </div>
+
+    <div class="hw-hint" id="hwHint">toque no passo para avançar</div>
+  </div>
+</div>
+
+<!-- HANDWASH DONE SCREEN -->
+<div id="hwDoneScreen">
+  <div class="hw-done-card">
+    <span class="hw-done-icon">🙌</span>
+    <div class="hw-done-title">concluído</div>
+    <div class="hw-done-sub">lavagem das mãos</div>
+    <div class="hw-done-pct-area">—</div>
+    <div class="hw-done-pct-label">acertos · em breve</div>
+    <button class="hw-done-restart" onclick="hwRestart()">repetir</button>
+  </div>
+</div>
+
+<!-- RESULT SCREEN -->
+<div id="resultScreen">
+  <div class="result-card">
+    <div class="result-title">sessão</div>
+    <div class="result-sub">higienização das mãos</div>
+    <div class="result-stats">
+      <div class="result-stat ok">
+        <div class="rs-n" id="rOk">0</div>
+        <div class="rs-l">corretos</div>
+      </div>
+      <div class="result-stat neutral">
+        <div class="rs-n" id="rNeutral">0</div>
+        <div class="rs-l">aceitáveis</div>
+      </div>
+      <div class="result-stat err">
+        <div class="rs-n" id="rErr">0</div>
+        <div class="rs-l">erros</div>
+      </div>
+    </div>
+    <button class="result-restart" onclick="startNormal()">recomeçar</button>
+    <button class="result-restart-errors" id="btnRevisarErros" onclick="startErrors()" style="display:none">revisar erros</button>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════════════
+// FLOOD BACKGROUND — dilúvio tomou tudo, só mar aberto
+// ═══════════════════════════════════════════════════════════════
+(function(){
+'use strict';
+
+const MONO_BG='"SF Mono",Monaco,Inconsolata,"Fira Code","Courier New",monospace';
+// Sem zonas de terra — tudo é água em diferentes profundidades
+const WATER_SHALLOW=0,WATER_MID=1,WATER_DEEP=2,WATER_DEEPEST=3;
+const WCHARS=['·','∘','~','∿','≈','∾'];
+const WZ=[WATER_SHALLOW,WATER_MID,WATER_DEEP,WATER_DEEPEST];
+
+// Paleta clara derivada de #B7C7D8 — azul-acinzentado claro
+const SEA={
+  bgBase:'#dce6f0',
+  shallow: ['#b7c7d8','#c4d2e2','#aabdce','#bfcfdf','#c8d6e4'],
+  mid:     ['#a8bcd0','#b0c4d4','#9fb8cc','#aac0d2','#b4c8d8'],
+  deep:    ['#96aec4','#9eb6cc','#90a8be','#98b0c6','#a2baca'],
+  deepest: ['#849eb8','#8aa4be','#7e98b2','#86a0ba','#8caac0'],
+  particle:'#3c6488',
+  foam:    ['#ffffff','#eef4fa','#ddeaf6','#f0f6fc','#e4eef8'],
+};
+
+function pickColor(arr,lp){return arr[Math.min(Math.floor(lp*arr.length),arr.length-1)];}
+function colorFor(zone,ch,lp){
+  if('❀✿*✽✻⚘°'.includes(ch))return pickColor(SEA.foam,lp); // espuma/bolhas
+  if(zone===WATER_SHALLOW)return pickColor(SEA.shallow,lp);
+  if(zone===WATER_MID)return pickColor(SEA.mid,lp);
+  if(zone===WATER_DEEP)return pickColor(SEA.deep,lp);
+  return pickColor(SEA.deepest,lp);
+}
+
+const canvas=document.getElementById('rc');
+// iOS: DPR > 2 pode causar canvas muito grande e falhar silenciosamente
+const DPR=Math.min(window.devicePixelRatio||1,2);
+let cW=window.innerWidth,cH=window.innerHeight;
+// Garantir dimensões válidas antes de setar
+function resizeCanvas(){
+  cW=window.innerWidth;cH=window.innerHeight;
+  canvas.width=Math.round(cW*DPR)||1;canvas.height=Math.round(cH*DPR)||1;
+  canvas.style.width=cW+'px';canvas.style.height=cH+'px';
+}
+resizeCanvas();
+const ctx=canvas.getContext('2d');
+if(!ctx){
+  // fallback: esconde canvas, deixa só o fundo CSS
+  document.getElementById('rw').style.display='none';
+}
+const FONT_PX=14*DPR;
+const CHAR_W=(25/3)*DPR;
+const LINE_H=(67/3)*DPR;
+const COLS=Math.ceil(canvas.width/CHAR_W)+2;
+const VISIBLE_ROWS=Math.ceil(canvas.height/LINE_H)+2;
+const TILE_ROWS=160;
+
+function fade(t){return t*t*t*(t*(6*t-15)+10);}
+function grad(h,x,y){const a=3&h,r=a<2?x:y,i=a<2?y:x;return((1&a)?-r:r)+((2&a)?-i:i);}
+const perm=(function(seed){let p=[];for(let i=0;i<256;i++)p[i]=i;let s=seed;for(let i=255;i>0;i--){s=(s*16807)%2147483647;const j=s%(i+1);[p[i],p[j]]=[p[j],p[i]];}return[...p,...p];})(42);
+function snoise(x,y){const xi=Math.floor(x)&255,yi=Math.floor(y)&255;const xf=x-Math.floor(x),yf=y-Math.floor(y);const u=fade(xf),v=fade(yf);const aa=perm[perm[xi]+yi],ab=perm[perm[xi]+yi+1],ba=perm[perm[xi+1]+yi],bb=perm[perm[xi+1]+yi+1];const r1=grad(aa,xf,yf)+(grad(ba,xf-1,yf)-grad(aa,xf,yf))*u;const r2=grad(ab,xf,yf-1)+(grad(bb,xf-1,yf-1)-grad(ab,xf,yf-1))*u;return r1+(r2-r1)*v;}
+let rngS=42;function rng(){rngS=(rngS*16807)%2147483647;return rngS/2147483647;}
+
+// Tile só com água — profundidade determinada por noise
+function buildTile(){
+  const tile=[];
+  for(let r=0;r<TILE_ROWS;r++){
+    const row=[];
+    for(let c=0;c<COLS;c++){
+      // profundidade base via noise — cria ilhas de profundidade variada
+      const dn=snoise(c*0.04+10,r*0.025+10);
+      let zone;
+      if(dn>0.35)zone=WATER_SHALLOW;
+      else if(dn>0.0)zone=WATER_MID;
+      else if(dn>-0.35)zone=WATER_DEEP;
+      else zone=WATER_DEEPEST;
+      const ch=WCHARS[Math.floor(rng()*WCHARS.length)];
+      row.push({ch,base:ch,zone,lp:0.5,op:1,rot:0,vis:true});
+    }
+    tile.push(row);
+  }
+  return tile;
+}
+const TILE=buildTile();
+function tileRow(r){return((r%TILE_ROWS)+TILE_ROWS)%TILE_ROWS;}
+
+let bgFrame=0,scrollPx=0;
+const SPEED=0.18; // deriva lenta — o mar flui devagar
+
+function updateTile(f){
+  const t=f*0.13;
+  for(let r=0;r<TILE_ROWS;r++){
+    for(let c=0;c<COLS;c++){
+      const cell=TILE[r][c];
+      // ondas com múltiplas frequências — simula profundidade variada
+      const n=snoise(0.038*c+0.0006*t, 0.022*r-0.0008*t);
+      const n2=snoise(0.015*c+0.0003*t+50, 0.009*r+0.0004*t+50);
+      const wave=n*0.7+n2*0.3;
+      // profundidade local oscila levemente
+      const dn=snoise(c*0.04+10+0.0001*t, r*0.025+10+0.00008*t);
+      if(dn>0.35)cell.zone=WATER_SHALLOW;
+      else if(dn>0.0)cell.zone=WATER_MID;
+      else if(dn>-0.35)cell.zone=WATER_DEEP;
+      else cell.zone=WATER_DEEPEST;
+      // visibilidade e caracter do char
+      const thr=cell.zone===WATER_DEEPEST?-0.28:cell.zone===WATER_DEEP?-0.08:cell.zone===WATER_MID?-0.15:-0.22;
+      const p=wave-thr;
+      if(p>0){
+        cell.vis=true;
+        const idx=Math.min(Math.floor((p/0.55)*WCHARS.length),WCHARS.length-1);
+        cell.ch=WCHARS[idx];
+        cell.op=Math.min(1,p*2.2+0.3);
+        // rotação sutil das ondas
+        const nx2=snoise(0.038*c+0.0006*t+0.6, 0.022*r-0.0008*t);
+        cell.rot=90+(n-nx2)*60;
+      } else {
+        cell.vis=false; cell.ch=' '; cell.op=0;
+      }
+      // brilho posicional — luz vinda de cima
+      const la=Math.PI/2+0.3*snoise(0.0012*t,100);
+      cell.lp=Math.max(0,Math.min(1,(Math.sin(c*Math.cos(la)*0.08+r*Math.sin(la)*0.05-0.011*t)+0.15*snoise(0.05*c+50,0.05*r+50)+1)*0.47));
+    }
+  }
+}
+
+// ── Partículas de espuma/bolhas do mar ──
+let particles=[],pid=0;
+function spawnParticles(){
+  // espuma de ondas em qualquer posição
+  if(Math.random()<0.07&&particles.filter(p=>p.t==='w').length<18){
+    const r=Math.floor(scrollPx/LINE_H)+Math.floor(Math.random()*VISIBLE_ROWS);
+    const c=Math.random()*COLS;
+    particles.push({id:pid++,x:c,yr:r,ch:WCHARS[Math.floor(Math.random()*WCHARS.length)],op:0,age:0,maxAge:80+Math.random()*60,t:'w'});
+  }
+  // bolhas de ar subindo
+  if(Math.random()<0.04&&particles.filter(p=>p.t==='b').length<10){
+    const r=Math.floor(scrollPx/LINE_H)+Math.floor(Math.random()*VISIBLE_ROWS);
+    const c=Math.random()*COLS;
+    particles.push({id:pid++,x:c,yr:r,ch:'°',op:0,age:0,maxAge:60+Math.random()*60,t:'b',tw:Math.random()*Math.PI*2,vy:-(0.01+Math.random()*0.015)});
+  }
+}
+function updateParticles(){
+  const next=[];
+  for(const p of particles){
+    const nx=p.x+0.025*Math.sin(0.08*p.yr+0.06*p.x+0.02*p.age);
+    const nyr=p.t==='b'?p.yr+(p.vy||0):p.yr+0.02;
+    const age=p.age+1;let op;
+    if(p.t==='b'){p.tw=(p.tw||0)+0.06;op=Math.min(1,age/8)*Math.max(0,(p.maxAge-age)/12)*(0.6+0.3*Math.sin(p.tw));}
+    else{op=age<12?age/12*0.75:age>p.maxAge-15?(p.maxAge-age)/15*0.75:0.75;}
+    if(age<p.maxAge)next.push({...p,x:nx,yr:nyr,age,op});
+  }
+  particles=next;
+}
+
+function renderBG(){
+  ctx.fillStyle=SEA.bgBase;ctx.fillRect(0,0,canvas.width,canvas.height);
+  ctx.font=`${FONT_PX}px ${MONO_BG}`;ctx.textBaseline='top';
+  const startR=Math.floor(scrollPx/LINE_H);const endR=startR+VISIBLE_ROWS+1;
+  for(let r=startR;r<=endR;r++){
+    const py=r*LINE_H-scrollPx;if(py<-LINE_H||py>canvas.height+LINE_H)continue;
+    const row=TILE[tileRow(r)];
+    for(let c=0;c<COLS;c++){
+      const cell=row[c];const ch=cell.ch;if(!ch||ch===' '||!cell.vis)continue;
+      const px=c*CHAR_W,lp=cell.lp||0.5;
+      const color=colorFor(cell.zone,ch,lp);
+      if(cell.op>0.05){
+        ctx.save();ctx.globalAlpha=Math.min(1,cell.op);
+        if(cell.rot!==0){const cxp=px+CHAR_W/2,cyp=py+FONT_PX/2;ctx.translate(cxp,cyp);ctx.rotate(cell.rot*Math.PI/180);ctx.translate(-cxp,-cyp);}
+        ctx.fillStyle=color;ctx.fillText(ch,px,py);ctx.restore();
+      }
+    }
+  }
+  // partículas de espuma
+  for(const p of particles){
+    const py=p.yr*LINE_H-scrollPx;if(py<-LINE_H||py>canvas.height+LINE_H)continue;
+    ctx.save();ctx.globalAlpha=Math.max(0,p.op);
+    ctx.fillStyle=SEA.particle;ctx.font=`${FONT_PX}px ${MONO_BG}`;
+    ctx.fillText(p.ch,p.x*CHAR_W,py);ctx.restore();
+  }
+}
+
+let lastTs=0;
+function loop(ts){
+  if(!ctx)return;
+  if(!lastTs)lastTs=ts;const dt=Math.min(ts-lastTs,50);lastTs=ts;
+  bgFrame++;scrollPx+=SPEED*(dt/16.67);
+  if(bgFrame%3===0)updateTile(bgFrame);
+  spawnParticles();updateParticles();renderBG();
+  requestAnimationFrame(loop);
+}
+window.addEventListener('resize',()=>{
+  resizeCanvas();
+});
+updateTile(0);
+requestAnimationFrame(loop);
+
+})();
+
+// =====================================================================
+// FLASHCARD GAME — HIGIENIZAÇÃO DAS MÃOS
+// =====================================================================
+
+// Cenários: resposta = método ideal
+// aceitoAlso = método alternativo aceitável (correto também, mas não o indicado)
+const CENARIOS = [
+  {
+    id: 1,
+    situacao: "Você aferiu a pressão arterial.",
+    pergunta: "Mãos sem sujidade visível. O que fazer?",
+    resposta: "alcohol",
+    aceitoAlso: "soap", // soap é aceitável mas excessivo
+    critico: false,
+    feedbackErro: "Sem sujidade visível e sem matéria orgânica, a preparação alcoólica é suficiente e recomendada.",
+    feedbackNeutro: "Correto! Água e sabão remove os microrganismos, mas sem sujidade visível o álcool 70% já seria suficiente e mais prático.",
+    regra: "Nenhuma das 3 chaves → álcool 70%"
+  },
+  {
+    id: 2,
+    situacao: "Você retirou um curativo. Há pequena quantidade de secreção nas mãos.",
+    pergunta: "Pouca secreção, mas ainda é matéria orgânica. O que fazer?",
+    resposta: "soap",
+    aceitoAlso: null,
+    critico: true,
+    feedbackErro: "Álcool não remove matéria orgânica. Mesmo pequena, a secreção exige lavagem com água e sabão para remoção mecânica.",
+    feedbackNeutro: null,
+    regra: "Matéria orgânica (sangue, secreção) → água e sabão SEMPRE"
+  },
+  {
+    id: 3,
+    situacao: "Paciente com diarreia associada a antibiótico — suspeita de Clostridioides difficile.",
+    pergunta: "Mãos SEM sujidade visível. O que fazer?",
+    resposta: "soap",
+    aceitoAlso: null,
+    critico: true,
+    feedbackErro: "Esporos de C. difficile não são eliminados pelo álcool. A remoção mecânica com água e sabão é obrigatória, independente da aparência das mãos.",
+    feedbackNeutro: null,
+    regra: "Suspeita de esporulado (C. diff) → água e sabão SEMPRE"
+  },
+  {
+    id: 4,
+    situacao: "Você realizou procedimento com luvas e as retirou. Mãos aparentemente limpas.",
+    pergunta: "Precisa higienizar? Se sim, qual método?",
+    resposta: "alcohol",
+    aceitoAlso: "soap",
+    critico: false,
+    feedbackErro: "A luva NÃO substitui a higiene das mãos. Ao retirar as luvas, micro-organismos podem contaminar as mãos. Sem sujidade visível → álcool 70%.",
+    feedbackNeutro: "Correto! Higienizou as mãos — ótimo. Sem sujidade visível, o álcool 70% seria o método mais indicado e prático nessa situação.",
+    regra: "Luvas não dispensam higiene → álcool 70% (mãos limpas)"
+  },
+  {
+    id: 5,
+    situacao: "Durante punção venosa houve contato com sangue.",
+    pergunta: "O que fazer?",
+    resposta: "soap",
+    aceitoAlso: null,
+    critico: true,
+    feedbackErro: "Sangue é matéria orgânica. O álcool não garante remoção adequada. Água e sabão são obrigatórios.",
+    feedbackNeutro: null,
+    regra: "Sangue = matéria orgânica → água e sabão"
+  },
+  {
+    id: 6,
+    situacao: "Você vai preparar medicação intravenosa.",
+    pergunta: "Mãos limpas, antes de procedimento asséptico. O que fazer?",
+    resposta: "alcohol",
+    aceitoAlso: "soap",
+    critico: false,
+    feedbackErro: "Sem sujidade e sem matéria orgânica, a preparação alcoólica é o método indicado antes de procedimentos assépticos com mãos limpas.",
+    feedbackNeutro: "Correto! Mas com mãos limpas antes de procedimento asséptico, o álcool 70% já seria suficiente e mais ágil.",
+    regra: "Mãos limpas + procedimento asséptico → álcool 70%"
+  },
+  {
+    id: 7,
+    situacao: "Você ajustou o lençol e a cama do paciente.",
+    pergunta: "Não houve contato direto com o paciente. O que fazer?",
+    resposta: "alcohol",
+    aceitoAlso: "soap",
+    critico: false,
+    feedbackErro: "Superfícies do ambiente do paciente são consideradas potencialmente contaminadas. A higiene é obrigatória mesmo sem contato direto. Sem sujidade → álcool 70%.",
+    feedbackNeutro: "Correto! Superfícies do paciente exigem higiene. Sem sujidade visível, o álcool 70% é o método padrão indicado nesse caso.",
+    regra: "Contato com superfície do paciente → higiene obrigatória → álcool 70%"
+  },
+  {
+    id: 8,
+    situacao: "Você utilizou o banheiro. As mãos não apresentam sujidade visível.",
+    pergunta: "O que fazer?",
+    resposta: "soap",
+    aceitoAlso: null,
+    critico: false,
+    feedbackErro: "Regra institucional e de saúde pública: após uso de banheiro, lavagem com água e sabão é obrigatória, mesmo que as mãos pareçam limpas.",
+    feedbackNeutro: null,
+    regra: "Após banheiro → água e sabão SEMPRE"
+  },
+  {
+    id: 9,
+    situacao: "Você manipulou equipamento contaminado, sem sujidade visível nas mãos.",
+    pergunta: "Ausência de sujeira significa ausência de risco?",
+    resposta: "alcohol",
+    aceitoAlso: "soap",
+    critico: false,
+    feedbackErro: "Risco de contaminação não equivale a sujeira visível. Sem matéria orgânica e sem esporulados → álcool 70% é eficaz e indicado.",
+    feedbackNeutro: "Correto! Risco ≠ sujidade visível. Mas sem matéria orgânica, o álcool 70% já resolve e é o método indicado.",
+    regra: "Risco ≠ sujeira visível → álcool 70% (sem MO)"
+  },
+  {
+    id: 10,
+    situacao: "Paciente em isolamento por bactéria multirresistente (MR).",
+    pergunta: "Sem sujidade nas mãos. O que fazer?",
+    resposta: "alcohol",
+    aceitoAlso: "soap",
+    critico: false,
+    feedbackErro: "Nem todo isolamento exige lavagem. Para bactérias MR sem suspeita de esporulados, o álcool 70% é eficaz. C. difficile é a exceção que exige lavagem.",
+    feedbackNeutro: "Correto! Para MR não esporulado, o álcool 70% já é suficiente. Lembre: C. difficile é a exceção que exige água e sabão.",
+    regra: "Isolamento por MR (não esporulado) + mãos limpas → álcool 70%"
+  },
+  {
+    id: 11,
+    situacao: "Você tocou secreção de ferida do paciente.",
+    pergunta: "O que fazer?",
+    resposta: "soap",
+    aceitoAlso: null,
+    critico: true,
+    feedbackErro: "Presença de matéria orgânica exige lavagem. O álcool não remove secreções — ele age sobre microrganismos, mas não elimina a carga orgânica que os protege.",
+    feedbackNeutro: null,
+    regra: "Secreção = matéria orgânica → água e sabão"
+  },
+  {
+    id: 12,
+    situacao: "Você está atendendo vários pacientes em sequência. Paciente 3 — contato apenas com superfícies do leito.",
+    pergunta: "Mãos sem sujidade visível após contato indireto. O que fazer?",
+    resposta: "alcohol",
+    aceitoAlso: "soap",
+    critico: false,
+    feedbackErro: "Na rotina de múltiplos atendimentos, o álcool 70% é o padrão entre contatos sem sujidade. Rápido e eficaz para microrganismos não esporulados.",
+    feedbackNeutro: "Correto! Higienizou — ótimo. Na rotina de múltiplos atendimentos sem sujidade, o álcool 70% é o padrão recomendado pela agilidade.",
+    regra: "Contato indireto, sem sujidade → álcool 70%"
+  }
+];
+
+let deck = [];
+let indice = 0;
+let acertos = 0;
+let neutros = 0;
+let erros = 0;
+let errosSet = new Set();
+let respondido = false;
+let modoErros = false;
+
+function embaralhar(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function startNormal() {
+  fecharMenu();
+  modoErros = false;
+  document.getElementById('errorsModeBadge').style.display = 'none';
+  deck = embaralhar(CENARIOS);
+  indice = 0; acertos = 0; neutros = 0; erros = 0; errosSet = new Set();
+  document.getElementById('resultScreen').style.display = 'none';
+  atualizarPlacar();
+  carregarCard();
+}
+
+function startErrors() {
+  fecharMenu();
+  if (errosSet.size === 0) {
+    startNormal();
+    return;
+  }
+  modoErros = true;
+  document.getElementById('errorsModeBadge').style.display = 'block';
+  deck = embaralhar(CENARIOS.filter(c => errosSet.has(c.id)));
+  indice = 0; acertos = 0; neutros = 0; erros = 0;
+  document.getElementById('resultScreen').style.display = 'none';
+  atualizarPlacar();
+  carregarCard();
+}
+
+function carregarCard() {
+  respondido = false;
+  const card = deck[indice];
+
+  const fi = document.getElementById('flipInner');
+  fi.classList.remove('is-flipped');
+
+  const front = document.getElementById('flipFront');
+  front.classList.remove('glow-ok', 'glow-neutral', 'glow-err', 'glow-critical');
+
+  document.getElementById('fcSituation').textContent = card.situacao;
+  document.getElementById('fcQuestion').textContent = card.pergunta;
+
+  setButtonsEnabled(true);
+  document.getElementById('nextBtn').style.display = 'none';
+  document.getElementById('fcHint').textContent = 'escolha o método de higienização';
+
+  atualizarPlacar();
+}
+
+function setButtonsEnabled(enabled) {
+  document.getElementById('btnAlcohol').disabled = !enabled;
+  document.getElementById('btnSoap').disabled = !enabled;
+}
+
+function escolher(opcao) {
+  if (respondido) return;
+  respondido = true;
+  setButtonsEnabled(false);
+
+  const card = deck[indice];
+  const correto = opcao === card.resposta;
+  // aceitavel: escolheu o alternativo quando existe
+  const aceitavel = !correto && card.aceitoAlso && opcao === card.aceitoAlso;
+  const front = document.getElementById('flipFront');
+
+  if (correto) {
+    // Acerto perfeito — avança sem flipar
+    acertos++;
+    front.classList.add('glow-ok');
+    document.getElementById('fcHint').textContent = '✓ correto';
+    setTimeout(() => {
+      front.classList.remove('glow-ok');
+      avancarOuFinalizar();
+    }, 600);
+
+  } else if (aceitavel) {
+    // Resposta aceitável mas não ideal — flipar com feedback neutro
+    neutros++;
+    front.classList.add('glow-neutral');
+
+    const verdict = document.getElementById('backVerdict');
+    verdict.textContent = '◎ correto, mas existe método mais indicado';
+    verdict.className = 'back-verdict neutral';
+    document.getElementById('backExplanation').textContent = card.feedbackNeutro;
+    document.getElementById('backRule').textContent = card.regra;
+
+    setTimeout(() => {
+      front.classList.remove('glow-neutral');
+      document.getElementById('flipInner').classList.add('is-flipped');
+      document.getElementById('nextBtn').style.display = 'block';
+      document.getElementById('fcHint').textContent = '';
+    }, 500);
+
+  } else {
+    // Erro real
+    erros++;
+    errosSet.add(card.id);
+
+    if (card.critico) {
+      front.classList.add('glow-critical');
+    } else {
+      front.classList.add('glow-err');
+    }
+
+    const verdict = document.getElementById('backVerdict');
+    verdict.textContent = card.critico ? '⚠ ERRO CRÍTICO' : '✗ Incorreto';
+    verdict.className = 'back-verdict ' + (card.critico ? 'critical' : 'wrong');
+    document.getElementById('backExplanation').textContent = card.feedbackErro;
+    document.getElementById('backRule').textContent = card.regra;
+
+    setTimeout(() => {
+      front.classList.remove('glow-err', 'glow-critical');
+      document.getElementById('flipInner').classList.add('is-flipped');
+      document.getElementById('nextBtn').style.display = 'block';
+      document.getElementById('fcHint').textContent = '';
+    }, 500);
+  }
+
+  atualizarPlacar();
+}
+
+function proximoCard() {
+  avancarOuFinalizar();
+}
+
+function avancarOuFinalizar() {
+  indice++;
+  if (indice >= deck.length) {
+    mostrarResultado();
+  } else {
+    carregarCard();
+  }
+}
+
+function mostrarResultado() {
+  document.getElementById('rOk').textContent = acertos;
+  document.getElementById('rNeutral').textContent = neutros;
+  document.getElementById('rErr').textContent = erros;
+  const btnErros = document.getElementById('btnRevisarErros');
+  btnErros.style.display = errosSet.size > 0 ? 'block' : 'none';
+  const rs = document.getElementById('resultScreen');
+  rs.style.display = 'flex';
+}
+
+function atualizarPlacar() {
+  document.getElementById('pIdx').textContent = `${Math.min(indice + 1, deck.length)}/${deck.length}`;
+  document.getElementById('pOk').textContent = acertos;
+  document.getElementById('pErr').textContent = erros;
+  const pct = deck.length > 0 ? (indice / deck.length) * 100 : 0;
+  document.getElementById('progressFill').style.width = pct + '%';
+}
+
+// ── MENU ──
+function toggleMenu() {
+  const m = document.getElementById('menu');
+  m.style.display = m.style.display === 'block' ? 'none' : 'block';
+}
+function fecharMenu() {
+  document.getElementById('menu').style.display = 'none';
+}
+document.addEventListener('click', e => {
+  const m = document.getElementById('menu');
+  const mb = document.getElementById('menuBtn');
+  if (!m.contains(e.target) && !mb.contains(e.target)) fecharMenu();
+});
+
+// ── KEYBOARD ──
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') { fecharMenu(); return; }
+  if (!respondido) {
+    if (e.key === '1') escolher('alcohol');
+    if (e.key === '2') escolher('soap');
+  } else {
+    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); proximoCard(); }
+  }
+});
+
+// ── INIT ──
+startNormal();
+
+// ═══════════════════════════════════════════
+// MODE SWITCHER
+// ═══════════════════════════════════════════
+let currentMode = 'flashcard';
+
+function toggleModeMenu() {
+  const m = document.getElementById('modeMenu');
+  m.style.display = m.style.display === 'block' ? 'none' : 'block';
+}
+
+function setMode(mode) {
+  currentMode = mode;
+  document.getElementById('modeMenu').style.display = 'none';
+
+  // Update active state
+  document.getElementById('modeItemFlash').classList.toggle('active', mode === 'flashcard');
+  document.getElementById('modeItemHw').classList.toggle('active', mode === 'handwash');
+
+  if (mode === 'flashcard') {
+    document.getElementById('app').style.display = 'flex';
+    document.getElementById('handwashApp').style.display = 'none';
+    document.getElementById('modoAtualBadge').textContent = 'modo::flashcard';
+    document.getElementById('hwDoneScreen').style.display = 'none';
+  } else {
+    document.getElementById('app').style.display = 'none';
+    document.getElementById('handwashApp').style.display = 'flex';
+    document.getElementById('modoAtualBadge').textContent = 'modo::lavagem das mãos · beta';
+    hwRestart();
+  }
+}
+
+// Close mode menu on outside click
+document.addEventListener('click', e => {
+  const mm = document.getElementById('modeMenu');
+  const mb = document.getElementById('modeSwitcherBtn');
+  if (mm && !mm.contains(e.target) && !mb.contains(e.target)) {
+    mm.style.display = 'none';
+  }
+});
+
+// ═══════════════════════════════════════════
+// HANDWASH MODE — 7 STEPS GIF CONTROL
+// ═══════════════════════════════════════════
+// The gif is a webp animation. We control it by pausing at each 1/7 segment.
+// Strategy: use a canvas to grab frames, OR use CSS clip on a positioned img.
+// Since we can't control webp frame-by-frame directly in all browsers,
+// we simulate steps by showing a static img and using CSS to "reveal" progress
+// using object-position to show different parts of the animation loop.
+// 
+// Better approach: We use the img src reload trick + currentTime via canvas
+// For simplicity and broad compatibility, we show the gif frozen at step start
+// via a canvas element that captures the frame.
+
+let hwCurrentStep = -1; // -1 = not started
+const HW_TOTAL = 7;
+
+// We'll use a video/canvas approach via Image + offscreen canvas
+// Actually, webp animated = treated as img; no frame control.
+// Best approach: use CSS animation-delay + animation-play-state on a canvas.
+// 
+// Simpler working approach: 
+//   - Keep img always loaded (gif plays normally when visible)
+//   - On step click, freeze the gif by cloning src with cache-bust per step
+//   - Show it playing for a moment then pause via replacing with canvas snapshot
+// 
+// Since webp animated frames aren't directly accessible without a library,
+// we'll use the "reload to restart" trick and clip the visible frame by
+// controlling how long we let it play before "pausing" (replacing img with canvas).
+
+let hwStepPlaying = false;
+let hwCanvas = null;
+let hwCtxC = null;
+let hwPlayTimer = null;
+
+// Duration of each 1/7 segment in ms (estimate for a ~3s gif)
+// User can adjust this. We'll use a placeholder; gif duration unknown.
+// We'll set a 400ms play window per step (can be tuned).
+const HW_STEP_DURATION = 400; // ms per step play window
+
+function hwSetup() {
+  hwCanvas = document.createElement('canvas');
+  hwCtxC = hwCanvas.getContext('2d');
+  hwCanvas.style.width = '100%';
+  hwCanvas.style.height = '100%';
+  hwCanvas.style.objectFit = 'cover';
+  hwCanvas.style.display = 'none';
+  document.getElementById('hwFrame').appendChild(hwCanvas);
+}
+
+function hwRestart() {
+  hwCurrentStep = -1;
+  hwStepPlaying = false;
+  if (hwPlayTimer) { clearTimeout(hwPlayTimer); hwPlayTimer = null; }
+  hwUpdateUI();
+
+  // Reload gif from start
+  const img = document.getElementById('hwGif');
+  const src = img.src.split('?')[0];
+  img.src = src + '?t=' + Date.now();
+  img.style.display = 'block';
+
+  if (hwCanvas) hwCanvas.style.display = 'none';
+  document.getElementById('hwDoneScreen').style.display = 'none';
+}
+
+function hwStep(idx) {
+  if (hwStepPlaying) return;
+  if (idx !== hwCurrentStep + 1) return; // must go in order
+
+  hwStepPlaying = true;
+  hwCurrentStep = idx;
+  hwUpdateUI();
+
+  // Restart gif to re-play from beginning, offset by playing previous steps
+  // We reload + let it play for (idx+1)*HW_STEP_DURATION ms total,
+  // then pause by capturing canvas frame.
+  const img = document.getElementById('hwGif');
+
+  // If first step, reload fresh
+  if (idx === 0) {
+    const src = img.src.split('?')[0];
+    img.src = src + '?t=' + Date.now();
+    img.style.display = 'block';
+    if (hwCanvas) hwCanvas.style.display = 'none';
+  }
+
+  // After step duration, capture & freeze
+  hwPlayTimer = setTimeout(() => {
+    // Capture current frame to canvas
+    try {
+      hwCanvas.width = img.naturalWidth || img.width || 400;
+      hwCanvas.height = img.naturalHeight || img.height || 300;
+      hwCtxC.drawImage(img, 0, 0, hwCanvas.width, hwCanvas.height);
+      hwCanvas.style.width = '100%';
+      hwCanvas.style.height = '100%';
+      hwCanvas.style.display = 'block';
+      hwCanvas.style.position = 'absolute';
+      hwCanvas.style.inset = '0';
+      hwCanvas.style.objectFit = 'cover';
+      img.style.display = 'none'; // hide gif (pauses it visually)
+    } catch(e) {
+      // cross-origin or other error — just leave gif playing
+    }
+
+    hwStepPlaying = false;
+    hwUpdateUI();
+
+    // Check if last step
+    if (hwCurrentStep === HW_TOTAL - 1) {
+      setTimeout(() => {
+        hwShowDone();
+      }, 1000);
+    }
+  }, HW_STEP_DURATION);
+}
+
+function hwShowDone() {
+  document.getElementById('hwDoneScreen').style.display = 'flex';
+}
+
+function hwUpdateUI() {
+  const label = document.getElementById('hwStepLabel');
+  label.textContent = (hwCurrentStep + 1) + ' / ' + HW_TOTAL;
+
+  const hint = document.getElementById('hwHint');
+
+  for (let i = 0; i < HW_TOTAL; i++) {
+    const btn = document.getElementById('hwBtn' + i);
+    btn.classList.remove('done', 'active');
+
+    if (i < hwCurrentStep) {
+      btn.classList.add('done');
+    } else if (i === hwCurrentStep) {
+      btn.classList.add(hwStepPlaying ? 'active' : 'done');
+    }
+  }
+
+  if (hwStepPlaying) {
+    hint.textContent = 'reproduzindo passo ' + (hwCurrentStep + 1) + '...';
+  } else if (hwCurrentStep === HW_TOTAL - 1) {
+    hint.textContent = 'todos os passos concluídos!';
+  } else if (hwCurrentStep < 0) {
+    hint.textContent = 'toque no passo 1 para começar';
+  } else {
+    hint.textContent = 'toque no passo ' + (hwCurrentStep + 2) + ' para continuar';
+  }
+}
+
+// Init handwash canvas
+hwSetup();
+hwUpdateUI();
+</script>
+</body>
+</html>
