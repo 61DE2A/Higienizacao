@@ -1948,18 +1948,16 @@ hwInit();
     const retryBtn = document.getElementById('premioRetryBtn');
 
     if (modo === 'flashcard') {
-      const pct = Math.round(((corretos + neutrosV) / total) * 100);
-      headline.textContent = 'Suas mãos já fazem a diferença.';
-      sub.innerHTML = `Você acertou <strong>${pct}%</strong> dos cenários — incluindo os críticos.<br>Esse nível de precisão é o que separa o cuidado seguro do acaso.`;
-      badge.textContent = 'aprovado · elegível ao prêmio de higienização';
+      headline.textContent = 'Suas mãos já fazem a diferença!';
+      sub.innerHTML = `Concorra ao prêmio.<br>Converse com a gente para mais informações.`;
+      badge.textContent = 'elegível ao prêmio de higienização';
       fechaBtn.onclick = () => fecharPremio(false);
       retryBtn.textContent = 'refazer o quiz';
       retryBtn.onclick = () => { fecharPremio(false); startNormal(); };
     } else {
-      const pct = Math.round((corretos / total) * 100);
-      headline.textContent = 'Técnica impecável, da palma ao cotovelo.';
-      sub.innerHTML = `<strong>${corretos} de ${total}</strong> etapas na ordem exata.<br>Você sabe que higienizar as mãos não é rotina — é protocolo. E você domina.`;
-      badge.textContent = 'aprovado · elegível ao prêmio de lavagem';
+      headline.textContent = 'Suas mãos já fazem a diferença!';
+      sub.innerHTML = `Concorra ao prêmio.<br>Converse com a gente para mais informações.`;
+      badge.textContent = 'elegível ao prêmio de higienização';
       fechaBtn.onclick = () => fecharPremio(true);
       retryBtn.textContent = 'tentar novamente';
       retryBtn.onclick = () => { fecharPremio(true); hwRestart(); };
