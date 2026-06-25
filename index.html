@@ -609,7 +609,7 @@ body{
     <div id="progressBar"><div id="progressFill"></div></div>
 
     <div id="placar">
-      <span>card <b id="pIdx">1/12</b></span>
+      <span>card <b id="pIdx">1/4</b></span>
       <span class="ok">✓ <b id="pOk">0</b></span>
       <span class="err">✗ <b id="pErr">0</b></span>
     </div>
@@ -930,11 +930,22 @@ const CENARIOS = [
     situacao: "Você aferiu a pressão arterial.",
     pergunta: "Mãos sem sujidade visível. O que fazer?",
     resposta: "alcohol",
-    aceitoAlso: "soap", // soap é aceitável mas excessivo
+    aceitoAlso: "soap",
     critico: false,
     feedbackErro: "Sem sujidade visível e sem matéria orgânica, a preparação alcoólica é suficiente e recomendada.",
     feedbackNeutro: "Correto! Água e sabão remove os microrganismos, mas sem sujidade visível o álcool 70% já seria suficiente e mais prático.",
     regra: "Nenhuma das 3 chaves → álcool 70%"
+  },
+  {
+    id: 6,
+    situacao: "Você vai preparar medicação intravenosa.",
+    pergunta: "Mãos limpas, antes de procedimento asséptico. O que fazer?",
+    resposta: "alcohol",
+    aceitoAlso: "soap",
+    critico: false,
+    feedbackErro: "Sem sujidade e sem matéria orgânica, a preparação alcoólica é o método indicado antes de procedimentos assépticos com mãos limpas.",
+    feedbackNeutro: "Correto! Mas com mãos limpas antes de procedimento asséptico, o álcool 70% já seria suficiente e mais ágil.",
+    regra: "Mãos limpas + procedimento asséptico → álcool 70%"
   },
   {
     id: 2,
@@ -959,17 +970,6 @@ const CENARIOS = [
     regra: "Suspeita de esporulado (C. diff) → água e sabão SEMPRE"
   },
   {
-    id: 4,
-    situacao: "Você realizou procedimento com luvas e as retirou. Mãos aparentemente limpas.",
-    pergunta: "Precisa higienizar? Se sim, qual método?",
-    resposta: "alcohol",
-    aceitoAlso: "soap",
-    critico: false,
-    feedbackErro: "A luva NÃO substitui a higiene das mãos. Ao retirar as luvas, micro-organismos podem contaminar as mãos. Sem sujidade visível → álcool 70%.",
-    feedbackNeutro: "Correto! Higienizou as mãos — ótimo. Sem sujidade visível, o álcool 70% seria o método mais indicado e prático nessa situação.",
-    regra: "Luvas não dispensam higiene → álcool 70% (mãos limpas)"
-  },
-  {
     id: 5,
     situacao: "Durante punção venosa houve contato com sangue.",
     pergunta: "O que fazer?",
@@ -979,83 +979,6 @@ const CENARIOS = [
     feedbackErro: "Sangue é matéria orgânica. O álcool não garante remoção adequada. Água e sabão são obrigatórios.",
     feedbackNeutro: null,
     regra: "Sangue = matéria orgânica → água e sabão"
-  },
-  {
-    id: 6,
-    situacao: "Você vai preparar medicação intravenosa.",
-    pergunta: "Mãos limpas, antes de procedimento asséptico. O que fazer?",
-    resposta: "alcohol",
-    aceitoAlso: "soap",
-    critico: false,
-    feedbackErro: "Sem sujidade e sem matéria orgânica, a preparação alcoólica é o método indicado antes de procedimentos assépticos com mãos limpas.",
-    feedbackNeutro: "Correto! Mas com mãos limpas antes de procedimento asséptico, o álcool 70% já seria suficiente e mais ágil.",
-    regra: "Mãos limpas + procedimento asséptico → álcool 70%"
-  },
-  {
-    id: 7,
-    situacao: "Você ajustou o lençol e a cama do paciente.",
-    pergunta: "Não houve contato direto com o paciente. O que fazer?",
-    resposta: "alcohol",
-    aceitoAlso: "soap",
-    critico: false,
-    feedbackErro: "Superfícies do ambiente do paciente são consideradas potencialmente contaminadas. A higiene é obrigatória mesmo sem contato direto. Sem sujidade → álcool 70%.",
-    feedbackNeutro: "Correto! Superfícies do paciente exigem higiene. Sem sujidade visível, o álcool 70% é o método padrão indicado nesse caso.",
-    regra: "Contato com superfície do paciente → higiene obrigatória → álcool 70%"
-  },
-  {
-    id: 8,
-    situacao: "Você utilizou o banheiro. As mãos não apresentam sujidade visível.",
-    pergunta: "O que fazer?",
-    resposta: "soap",
-    aceitoAlso: null,
-    critico: false,
-    feedbackErro: "Regra institucional e de saúde pública: após uso de banheiro, lavagem com água e sabão é obrigatória, mesmo que as mãos pareçam limpas.",
-    feedbackNeutro: null,
-    regra: "Após banheiro → água e sabão SEMPRE"
-  },
-  {
-    id: 9,
-    situacao: "Você manipulou equipamento contaminado, sem sujidade visível nas mãos.",
-    pergunta: "Ausência de sujeira significa ausência de risco?",
-    resposta: "alcohol",
-    aceitoAlso: "soap",
-    critico: false,
-    feedbackErro: "Risco de contaminação não equivale a sujeira visível. Sem matéria orgânica e sem esporulados → álcool 70% é eficaz e indicado.",
-    feedbackNeutro: "Correto! Risco ≠ sujidade visível. Mas sem matéria orgânica, o álcool 70% já resolve e é o método indicado.",
-    regra: "Risco ≠ sujeira visível → álcool 70% (sem MO)"
-  },
-  {
-    id: 10,
-    situacao: "Paciente em isolamento por bactéria multirresistente (MR).",
-    pergunta: "Sem sujidade nas mãos. O que fazer?",
-    resposta: "alcohol",
-    aceitoAlso: "soap",
-    critico: false,
-    feedbackErro: "Nem todo isolamento exige lavagem. Para bactérias MR sem suspeita de esporulados, o álcool 70% é eficaz. C. difficile é a exceção que exige lavagem.",
-    feedbackNeutro: "Correto! Para MR não esporulado, o álcool 70% já é suficiente. Lembre: C. difficile é a exceção que exige água e sabão.",
-    regra: "Isolamento por MR (não esporulado) + mãos limpas → álcool 70%"
-  },
-  {
-    id: 11,
-    situacao: "Você tocou secreção de ferida do paciente.",
-    pergunta: "O que fazer?",
-    resposta: "soap",
-    aceitoAlso: null,
-    critico: true,
-    feedbackErro: "Presença de matéria orgânica exige lavagem. O álcool não remove secreções — ele age sobre microrganismos, mas não elimina a carga orgânica que os protege.",
-    feedbackNeutro: null,
-    regra: "Secreção = matéria orgânica → água e sabão"
-  },
-  {
-    id: 12,
-    situacao: "Você está atendendo vários pacientes em sequência. Paciente 3 — contato apenas com superfícies do leito.",
-    pergunta: "Mãos sem sujidade visível após contato indireto. O que fazer?",
-    resposta: "alcohol",
-    aceitoAlso: "soap",
-    critico: false,
-    feedbackErro: "Na rotina de múltiplos atendimentos, o álcool 70% é o padrão entre contatos sem sujidade. Rápido e eficaz para microrganismos não esporulados.",
-    feedbackNeutro: "Correto! Higienizou — ótimo. Na rotina de múltiplos atendimentos sem sujidade, o álcool 70% é o padrão recomendado pela agilidade.",
-    regra: "Contato indireto, sem sujidade → álcool 70%"
   }
 ];
 
@@ -1215,7 +1138,7 @@ function mostrarResultado() {
   const btnErros = document.getElementById('btnRevisarErros');
   btnErros.style.display = errosSet.size > 0 ? 'block' : 'none';
 
-  // Armazenar valores para uso posterior (ex: botão "refazer o teste")
+  // Armazenar valores para uso posterior no botão continuar
   const total = deck.length;
   window.resultadoFlashcard = {
     acertos: acertos,
@@ -1224,9 +1147,8 @@ function mostrarResultado() {
     total: total
   };
 
-  // Vai direto para a tela de prêmio, sem precisar clicar em continuar,
-  // independente da quantidade de acertos.
-  mostrarPremio('flashcard', acertos, neutros, erros, total);
+  // Sempre mostrar resultScreen, independente de erros ou acertos
+  document.getElementById('resultScreen').style.display = 'flex';
 }
 
 function irParaPremio() {
@@ -1791,15 +1713,18 @@ function hwConfirm() {
   const pct = Math.round((correct / HW_TOTAL) * 100);
   document.getElementById('hwScorePct').textContent = pct + '%';
   document.getElementById('hwScoreFrac').textContent = correct + ' de ' + HW_TOTAL + ' na posição correta';
-  document.getElementById('hwScore').style.display = 'none';
+  document.getElementById('hwScore').style.display = 'block';
 
   document.getElementById('hwConfirmBtn').style.display = 'none';
   document.getElementById('hwHint').style.display = 'none';
   document.getElementById('hwStepLabel').textContent = correct + ' / 10 ✓';
 
-  // Vai direto para a tela de prêmio, sem mostrar a pontuação,
-  // independente da quantidade de acertos.
-  mostrarPremio('handwash', correct, 0, HW_TOTAL - correct, HW_TOTAL);
+  // Threshold premiação handwash: ≥7/10 posições corretas (70%)
+  if (correct >= 7) {
+    setTimeout(() => mostrarPremio('handwash', correct, 0, HW_TOTAL - correct, HW_TOTAL), 800);
+  } else {
+    document.getElementById('hwRestartBtn').style.display = 'block';
+  }
 }
 
 // ── Reiniciar ──
@@ -1955,13 +1880,13 @@ hwInit();
       headline.textContent = 'Suas mãos já fazem a diferença.';
       sub.textContent = 'Concorra ao prêmio.';
       fechaBtn.textContent = 'refazer o teste';
-      fechaBtn.onclick = () => { fecharPremio(); startNormal(); };
+      fechaBtn.onclick = () => { fecharPremio(false); startNormal(); };
       retryBtn.style.display = 'none';
     } else {
       headline.textContent = 'Técnica impecável, da palma ao cotovelo.';
       sub.innerHTML = `<strong>${corretos} de ${total}</strong> etapas na ordem exata.`;
       fechaBtn.textContent = 'refazer o teste';
-      fechaBtn.onclick = () => { fecharPremio(); hwRestart(); };
+      fechaBtn.onclick = () => { fecharPremio(true); hwRestart(); };
       retryBtn.style.display = 'none';
     }
 
@@ -1969,9 +1894,14 @@ hwInit();
     startConfetti();
   };
 
-  function fecharPremio() {
+  function fecharPremio(isHandwash) {
     document.getElementById('premioOverlay').style.display = 'none';
     stopConfetti();
+    if (isHandwash) {
+      document.getElementById('hwRestartBtn').style.display = 'block';
+    } else {
+      document.getElementById('resultScreen').style.display = 'flex';
+    }
   }
 })();
 
