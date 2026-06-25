@@ -684,15 +684,12 @@ body{
   <div class="premio-card">
     <span class="premio-estrelas">🏆✨🎉</span>
     <div class="premio-titulo">resultado da avaliação</div>
-    <div class="premio-headline" id="premioHeadline">Suas mãos salvam vidas.</div>
-    <div class="premio-sub" id="premioSub">Você demonstrou domínio técnico acima do esperado.<br>Isso não é detalhe — é a diferença que importa.</div>
-    <div class="premio-badge">
-      <span>🎖</span>
-      <span id="premioBadgeText">apto para concorrer ao prêmio</span>
-    </div>
+    <div class="premio-headline" id="premioHeadline">Suas mãos já fazem a diferença.</div>
+    <div class="premio-sub" id="premioSub" style="font-size:16px;font-weight:700;color:rgba(12,22,36,0.95);margin-bottom:8px;">Concorra ao prêmio.</div>
+    <div class="premio-sub" style="font-size:12px;color:rgba(12,22,36,0.65);line-height:1.6;margin-bottom:24px;font-weight:600;">Converse com a gente para mais informações.</div>
     <div class="premio-divider"></div>
-    <button class="premio-btn-fechar" id="premioFechaBtn">continuar</button>
-    <button class="premio-btn-retry" id="premioRetryBtn">tentar novamente</button>
+    <button class="premio-btn-fechar" id="premioFechaBtn">refazer o teste</button>
+    <button class="premio-btn-retry" id="premioRetryBtn" style="display:none;">tentar novamente</button>
   </div>
 </div>
 
@@ -716,8 +713,11 @@ body{
         <div class="rs-l">erros</div>
       </div>
     </div>
-    <button class="result-restart" onclick="startNormal()">recomeçar</button>
-    <button class="result-restart-errors" id="btnRevisarErros" onclick="startErrors()" style="display:none">revisar erros</button>
+    <div style="display:flex;gap:10px;width:100%;margin-top:16px;flex-direction:column;">
+      <button class="result-restart" id="btnContinuar" onclick="irParaPremio()" style="flex:1;background:rgba(40,76,116,0.90);border-color:rgba(55,95,135,0.80);color:white;font-weight:700;">continuar</button>
+      <button class="result-restart" onclick="startNormal()" style="flex:1;">recomeçar</button>
+    </div>
+    <button class="result-restart-errors" id="btnRevisarErros" onclick="startErrors()" style="display:none;margin-top:10px;">revisar erros</button>
   </div>
 </div>
 
@@ -1215,16 +1215,23 @@ function mostrarResultado() {
   const btnErros = document.getElementById('btnRevisarErros');
   btnErros.style.display = errosSet.size > 0 ? 'block' : 'none';
 
-  // Threshold premiação flashcard: sem erros críticos E ≥80% de acertos (corretos+aceitáveis)
+  // Armazenar valores para uso posterior no botão continuar
   const total = deck.length;
-  const aproveitamento = (acertos + neutros) / total;
-  const temErroCritico = deck.some((c, i) => i < total && c.critico && errosSet.has(c.id));
-  const flashcardAprovado = aproveitamento >= 0.80 && !temErroCritico;
+  window.resultadoFlashcard = {
+    acertos: acertos,
+    neutros: neutros,
+    erros: erros,
+    total: total
+  };
 
-  if (flashcardAprovado) {
-    mostrarPremio('flashcard', acertos, neutros, erros, total);
-  } else {
-    document.getElementById('resultScreen').style.display = 'flex';
+  // Sempre mostrar resultScreen, independente de erros ou acertos
+  document.getElementById('resultScreen').style.display = 'flex';
+}
+
+function irParaPremio() {
+  if (window.resultadoFlashcard) {
+    const res = window.resultadoFlashcard;
+    mostrarPremio('flashcard', res.acertos, res.neutros, res.erros, res.total);
   }
 }
 
@@ -1943,24 +1950,21 @@ hwInit();
     const overlay = document.getElementById('premioOverlay');
     const headline = document.getElementById('premioHeadline');
     const sub = document.getElementById('premioSub');
-    const badge = document.getElementById('premioBadgeText');
     const fechaBtn = document.getElementById('premioFechaBtn');
     const retryBtn = document.getElementById('premioRetryBtn');
 
     if (modo === 'flashcard') {
-      headline.textContent = 'Suas mãos já fazem a diferença!';
-      sub.innerHTML = `Concorra ao prêmio.<br>Converse com a gente para mais informações.`;
-      badge.textContent = 'elegível ao prêmio de higienização';
-      fechaBtn.onclick = () => fecharPremio(false);
-      retryBtn.textContent = 'refazer o quiz';
-      retryBtn.onclick = () => { fecharPremio(false); startNormal(); };
+      headline.textContent = 'Suas mãos já fazem a diferença.';
+      sub.textContent = 'Concorra ao prêmio.';
+      fechaBtn.textContent = 'refazer o teste';
+      fechaBtn.onclick = () => { fecharPremio(false); startNormal(); };
+      retryBtn.style.display = 'none';
     } else {
-      headline.textContent = 'Suas mãos já fazem a diferença!';
-      sub.innerHTML = `Concorra ao prêmio.<br>Converse com a gente para mais informações.`;
-      badge.textContent = 'elegível ao prêmio de higienização';
-      fechaBtn.onclick = () => fecharPremio(true);
-      retryBtn.textContent = 'tentar novamente';
-      retryBtn.onclick = () => { fecharPremio(true); hwRestart(); };
+      headline.textContent = 'Técnica impecável, da palma ao cotovelo.';
+      sub.innerHTML = `<strong>${corretos} de ${total}</strong> etapas na ordem exata.`;
+      fechaBtn.textContent = 'refazer o teste';
+      fechaBtn.onclick = () => { fecharPremio(true); hwRestart(); };
+      retryBtn.style.display = 'none';
     }
 
     overlay.style.display = 'flex';
