@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PDF ⇄ Código</title>
+<style>
+  :root{
+    --ink:#1c1f26;
+    --paper:#f6f4ee;
+    --panel:#ffffff;
+    --line:#dcd7c9;
+    --accent:#2f5d50;
+    --accent-ink:#ffffff;
+    --muted:#6b6558;
+    --mono: "IBM Plex Mono", "SF Mono", Consolas, monospace;
+    --sans: "IBM Plex Sans", "Segoe UI", sans-serif;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0; padding:0; background:var(--paper); color:var(--ink);
+    font-family:var(--sans); min-height:100vh;
+  }
+  header{ padding:28px 24px 18px; border-bottom:2px solid var(--ink); }
+  header h1{ margin:0 0 4px; font-size:1.5rem; letter-spacing:-0.01em; }
+  header p{ margin:0; color:var(--muted); font-size:0.92rem; }
+  .wrap{ max-width:900px; margin:0 auto; padding:0 20px; }
+  .tabs{ display:flex; gap:2px; margin:22px 0 0; border-bottom:2px solid var(--ink); }
+  .tab{
+    flex:1; padding:12px 10px; text-align:center; cursor:pointer;
+    background:var(--panel); border:2px solid var(--ink); border-bottom:none;
+    font-weight:600; font-size:0.95rem; color:var(--muted); border-radius:8px 8px 0 0;
+  }
+  .tab.active{ color:var(--ink); background:var(--paper); }
+  .panel{ display:none; padding:26px 0 60px; }
+  .panel.active{ display:block; }
+  .dropzone{
+    border:2px dashed var(--line); border-radius:10px; padding:34px 18px;
+    text-align:center; background:var(--panel); cursor:pointer;
+    transition:border-color .15s, background .15s;
+  }
+  .dropzone.drag{ border-color:var(--accent); background:#eef3ee; }
+  .dropzone strong{ display:block; margin-bottom:6px; }
+  .dropzone span{ color:var(--muted); font-size:0.85rem; }
+  input[type=file]{ display:none; }
+  textarea{
+    width:100%; min-height:280px; margin-top:16px; padding:16px;
+    background:var(--panel); border:2px solid var(--line); border-radius:10px;
+    font-family:var(--mono); font-size:0.78rem; line-height:1.5; color:var(--ink);
+    resize:vertical; word-break:break-all;
+  }
+  textarea:focus{ outline:none; border-color:var(--accent); }
+  .row{ display:flex; gap:10px; flex-wrap:wrap; margin-top:14px; align-items:center; }
+  button{
+    font-family:var(--sans); font-weight:600; font-size:0.88rem;
+    padding:10px 16px; border-radius:8px; border:2px solid var(--ink);
+    background:var(--panel); color:var(--ink); cursor:pointer;
+  }
+  button.primary{ background:var(--accent); border-color:var(--accent); color:var(--accent-ink); }
+  button:disabled{ opacity:0.45; cursor:not-allowed; }
+  button:hover:not(:disabled){ filter:brightness(0.96); }
+  .status{ font-size:0.85rem; color:var(--muted); margin-top:8px; min-height:1.2em; }
+  .status.err{ color:#a3372c; }
+  .status.ok{ color:var(--accent); }
+  .hint{
+    margin-top:20px; padding:12px 14px; border-left:3px solid var(--accent);
+    background:var(--panel); font-size:0.85rem; color:var(--muted); border-radius:0 8px 8px 0;
+  }
+  input[type=text]{
+    padding:8px 10px; border:2px solid var(--line); border-radius:8px;
+    font-family:var(--sans); flex:1; min-width:160px;
+  }
+  footer{ text-align:center; color:var(--muted); font-size:0.78rem; padding:20px; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap">
+    <h1>PDF ⇄ Código</h1>
+    <p>Transforma o PDF em um texto (Base64) que você pode copiar/colar, e reconstrói o PDF original, idêntico, a partir desse texto. Tudo roda no seu navegador — nada é enviado pra nenhum servidor.</p>
+  </div>
+</header>
+
+<div class="wrap">
+  <div class="tabs">
+    <div class="tab active" data-tab="p2c">PDF → Código</div>
+    <div class="tab" data-tab="c2p">Código → PDF</div>
+  </div>
+
+  <!-- PDF -> CODE -->
+  <div class="panel active" id="p2c">
+    <div class="dropzone" id="dz">
+      <strong>Clique ou arraste um PDF aqui</strong>
+      <span>O arquivo inteiro vira um texto Base64 abaixo, pronto pra copiar</span>
+      <input type="file" id="fileInput" accept="application/pdf">
+    </div>
+    <div class="status" id="p2cStatus"></div>
+    <textarea id="p2cOutput" placeholder="O código do PDF vai aparecer aqui..." readonly></textarea>
+    <div class="row">
+      <button class="primary" id="copyBtn">Copiar código</button>
+      <button id="downloadCodeBtn">Baixar como .txt</button>
+    </div>
+    <div class="hint">Copie esse texto e guarde onde quiser (e-mail, Google Docs, WhatsApp pra você mesmo). Depois, na aba "Código → PDF", cole de volta pra recuperar o PDF original — exatamente igual, byte a byte.</div>
+  </div>
+
+  <!-- CODE -> PDF -->
+  <div class="panel" id="c2p">
+    <textarea id="c2pInput" placeholder="Cole aqui o código Base64 gerado na outra aba..."></textarea>
+    <div class="row">
+      <label style="font-size:0.85rem;color:var(--muted);">Nome do arquivo:</label>
+      <input type="text" id="pdfName" placeholder="documento">
+    </div>
+    <div class="row">
+      <button class="primary" id="genOpenBtn">Reconstruir e abrir em nova aba</button>
+      <button id="genDownloadBtn">Reconstruir e baixar PDF</button>
+    </div>
+    <div class="status" id="c2pStatus"></div>
+    <div class="hint">"Abrir em nova aba" só mostra o PDF no navegador, sem forçar download — útil se o PC bloquear downloads. Ali dá pra ler, imprimir ou salvar via Ctrl+P.</div>
+  </div>
+</div>
+
+<footer>O código gerado é o arquivo original codificado em Base64 — não é uma versão resumida ou reescrita.</footer>
+
+<script>
+document.querySelectorAll('.tab').forEach(t => {
+  t.addEventListener('click', () => {
+    document.querySelectorAll('.tab').forEach(x => x.classList.remove('active'));
+    document.querySelectorAll('.panel').forEach(x => x.classList.remove('active'));
+    t.classList.add('active');
+    document.getElementById(t.dataset.tab).classList.add('active');
+  });
+});
+
+// --- PDF -> CODE ---
+const dz = document.getElementById('dz');
+const fileInput = document.getElementById('fileInput');
+const p2cStatus = document.getElementById('p2cStatus');
+const p2cOutput = document.getElementById('p2cOutput');
+let lastFileName = 'documento';
+
+dz.addEventListener('click', () => fileInput.click());
+dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('drag'); });
+dz.addEventListener('dragleave', () => dz.classList.remove('drag'));
+dz.addEventListener('drop', e => {
+  e.preventDefault(); dz.classList.remove('drag');
+  if (e.dataTransfer.files.length) handlePdf(e.dataTransfer.files[0]);
+});
+fileInput.addEventListener('change', e => {
+  if (e.target.files.length) handlePdf(e.target.files[0]);
+});
+
+function arrayBufferToBase64(buffer){
+  let binary = '';
+  const bytes = new Uint8Array(buffer);
+  const chunkSize = 0x8000;
+  for (let i = 0; i < bytes.length; i += chunkSize) {
+    const chunk = bytes.subarray(i, i + chunkSize);
+    binary += String.fromCharCode.apply(null, chunk);
+  }
+  return btoa(binary);
+}
+
+function base64ToBytes(base64){
+  const binary = atob(base64);
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+  return bytes;
+}
+
+async function handlePdf(file){
+  if (file.type !== 'application/pdf' && !file.name.toLowerCase().endsWith('.pdf')) {
+    setStatus(p2cStatus, 'Esse arquivo não parece ser um PDF.', 'err');
+    return;
+  }
+  setStatus(p2cStatus, 'Convertendo ' + file.name + '...', '');
+  p2cOutput.value = '';
+  try {
+    lastFileName = file.name.replace(/\.pdf$/i, '');
+    const buf = await file.arrayBuffer();
+    const base64 = arrayBufferToBase64(buf);
+    p2cOutput.value = base64;
+    setStatus(p2cStatus, 'Pronto! ' + (buf.byteLength/1024).toFixed(1) + ' KB convertidos em ' + base64.length + ' caracteres de código.', 'ok');
+  } catch (err) {
+    setStatus(p2cStatus, 'Erro ao converter o PDF: ' + err.message, 'err');
+  }
+}
+
+document.getElementById('copyBtn').addEventListener('click', async () => {
+  if (!p2cOutput.value) { setStatus(p2cStatus, 'Nada para copiar ainda.', 'err'); return; }
+  try {
+    await navigator.clipboard.writeText(p2cOutput.value);
+    setStatus(p2cStatus, 'Código copiado para a área de transferência!', 'ok');
+  } catch {
+    p2cOutput.select();
+    document.execCommand('copy');
+    setStatus(p2cStatus, 'Código copiado (modo alternativo).', 'ok');
+  }
+});
+
+document.getElementById('downloadCodeBtn').addEventListener('click', () => {
+  if (!p2cOutput.value) { setStatus(p2cStatus, 'Nada para baixar ainda.', 'err'); return; }
+  const blob = new Blob([p2cOutput.value], { type: 'text/plain' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = lastFileName + '.txt';
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+});
+
+// --- CODE -> PDF ---
+const c2pInput = document.getElementById('c2pInput');
+const c2pStatus = document.getElementById('c2pStatus');
+const pdfNameInput = document.getElementById('pdfName');
+
+function rebuildBlob(){
+  const raw = c2pInput.value.trim().replace(/\s+/g, '');
+  if (!raw) throw new Error('Cole o código primeiro.');
+  const bytes = base64ToBytes(raw);
+  return new Blob([bytes], { type: 'application/pdf' });
+}
+
+document.getElementById('genOpenBtn').addEventListener('click', () => {
+  try {
+    const blob = rebuildBlob();
+    const url = URL.createObjectURL(blob);
+    window.open(url, '_blank');
+    setStatus(c2pStatus, 'PDF reconstruído e aberto em nova aba.', 'ok');
+  } catch (err) {
+    setStatus(c2pStatus, 'Erro ao reconstruir: ' + err.message + ' (confira se colou o código completo, sem cortar nada)', 'err');
+  }
+});
+
+document.getElementById('genDownloadBtn').addEventListener('click', () => {
+  try {
+    const blob = rebuildBlob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    const name = (pdfNameInput.value.trim() || 'documento').replace(/[^\w\-]+/g, '_');
+    a.href = url; a.download = name + '.pdf';
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    setStatus(c2pStatus, 'PDF reconstruído e baixado.', 'ok');
+  } catch (err) {
+    setStatus(c2pStatus, 'Erro ao reconstruir: ' + err.message + ' (confira se colou o código completo, sem cortar nada)', 'err');
+  }
+});
+
+function setStatus(el, msg, kind){
+  el.textContent = msg;
+  el.className = 'status' + (kind ? ' ' + kind : '');
+}
+</script>
+</body>
+</html>
